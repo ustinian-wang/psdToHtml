@@ -1,7 +1,6 @@
 {
-  "name": "psdToHtml",
+  "name": "psd-to-html",
   "version": "1.0.0",
-  "description": "exportResult：开发环境的预览目录\r \t/css\r \t/image\r \t/js\r \tresult.html(浏览器打开预览效果)",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
