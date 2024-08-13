@@ -1,0 +1,26 @@
+{
+  "name": "psdToHtml",
+  "version": "1.0.0",
+  "description": "exportResult：开发环境的预览目录\r \t/css\r \t/image\r \t/js\r \tresult.html(浏览器打开预览效果)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "parse": "yarn tsc && node lib/parse.js"
+  },
+  "author": "ustinian-wang <wangjser@gmail.com> (https://github.com/ustinian-wang)",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.3",
+    "png-to-jpeg": "^1.0.1",
+    "psd": "^3.2.0",
+    "psd.js": "^3.3.0-beta.2",
+    "tree-cli": "^0.6.7"
+  },
+  "directories": {
+    "lib": "lib"
+  },
+  "devDependencies": {
+    "@types/node": "^22.2.0",
+    "typescript": "^5.5.4"
+  }
+}
