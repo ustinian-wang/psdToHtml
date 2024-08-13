@@ -2,10 +2,10 @@
 
 ## Introduction
 
-这是一个将psd文件转换成html页面的工具，你只要修改`config.json`内容，然后就可以生成对应的页面，并且到dist下进行预览
+这是一个将psd文件转换成html页面的工具，你只要修改`config.json`内容，然后就可以生成对应的页面，并且到`/psdToHtml/dist/dev/result/result.html`下，打开浏览器进行预览
 
 ## Usages
-
+运行下面的命令，你就可以看到生成的页面了~
 ```shell
 yarn parse
 ```
@@ -17,7 +17,7 @@ yarn parse
     ├── design.psd # 设计稿的位置
     ├── dist # 生成html的产物
     |  ├── dev # 给开发环境用的html产物
-    |  |  ├── result #这里会包含css，js
+    |  |  ├── result #这里会包含css，js，html
     |  |  └── template.html #模板文件，可以配置html的初始结构
     |  └── prod #和dev一样，只是生产出来的内容是给生产环境使用的
     |     ├── result

@@ -2,3 +2,4 @@ node_modules/
 /lib/
 .obsidian/
 .idea
+/dist/*
