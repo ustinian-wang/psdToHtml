@@ -1,8 +1,16 @@
-import { DesignConfig } from "./Config";
+import { DesignConfig, DesignDeviceEnum } from "./Config";
 import {Func} from "./Func";
+import * as path from "node:path";
+import { checkFileExists } from "@ustinian-wang/node-kit";
+import pkg from 'psd.js';
+import { isGroupNode, isLayerNode, isVisibleLayerNode, parsePsd } from './psdKit';
+const { fromFile } = pkg;
 
-const psd = require("psd");
-const path = require("path");
+type HTMLResult = {
+    css:string,
+    js:string,
+    html:string
+}
 
 export class PsdDeal {
     private tree: any;
@@ -15,10 +23,9 @@ export class PsdDeal {
         this.config = config;
         //这里做一些初始化工作
         this.uniqueId = 0;
-        const psdLoaded:any = psd.fromFile(file);
-        psdLoaded.parse();//要执行一遍解析，后面的结果才能产出
-        this.tree = psdLoaded.tree();
-        this.psdJson = this.tree.export();
+        let result = parsePsd(file);
+        this.tree = result.tree;
+        this.psdJson = result.json;
         this.initTree(this.tree);
     }
 
@@ -30,31 +37,25 @@ export class PsdDeal {
     }
 
     renameAllNode(tree: any):void{
-        this.eachTree(tree, function(node: any, index:number){
+        this.eachTree(tree, (node: any, index:number)=>{
             node.oldName = node.name;
             node.name = node.oldName+node.uid;
         })
     }
     eachTree(tree: any, callback: Function){//这里怎么给函数定义参数类型？
-        var $self = this;
         this.eachNodes(tree._children, callback);
     }
     eachNodes(nodes: any, callback: Function){
-        var $self = this;
-        nodes.forEach(function(node: any, index: number){
+        nodes.forEach((node: any, index: number)=>{
 
             if(node._children && node._children.length){
-                $self.eachNodes(node._children, callback);
+                this.eachNodes(node._children, callback);
             }else{
                 callback(node, index);
             }
         });
     }
-    getResult(): {
-        css:string,
-        js:string,
-        html:string
-    } {
+    getResult(): HTMLResult {
         let cssList: Array<string> = [];
         let jsList: Array<string> = [];
         this.genBaseCss(cssList);
@@ -69,11 +70,7 @@ export class PsdDeal {
         }
     }
 
-    getFuncResult (): {
-        css: string,
-        js:string,
-        html: string
-    }{
+    getFuncResult (): HTMLResult {
         
         let cssList: Array<string> = [];
         let jsList: Array<string> = [];
@@ -103,7 +100,7 @@ export class PsdDeal {
         `);
 
         let height: number = 0;
-        if(this.config.device=="pc"){
+        if(this.config.device==DesignDeviceEnum.PC){
             
             if(this.config.selfAdapt){
                 
@@ -154,7 +151,7 @@ export class PsdDeal {
 
             }
 
-        }else if(this.config.device == "mobi"){
+        }else if(this.config.device == DesignDeviceEnum.MOBILE){
 
             cssList.push(`
                 .fk_contentWrap{
@@ -172,7 +169,7 @@ export class PsdDeal {
     //产出基础脚本
     genBaseJs(jsList: Array<string>) : void{
         
-        if(this.config.device == "pc"){
+        if(this.config.device == DesignDeviceEnum.PC){
             if(this.config.selfAdapt){
                 jsList.push(`
                     (function(root){
@@ -189,7 +186,7 @@ export class PsdDeal {
                     }(window));
                 `);
             }
-        }else if(this.config.device == "mobi"){
+        }else if(this.config.device == DesignDeviceEnum.MOBILE){
             jsList.push(`
                 (function(root){
                     function getRemUnit(){
@@ -227,7 +224,7 @@ export class PsdDeal {
             var lineFeed="";
             var isLineFeed = false;
             
-            if($self.isGroupVisible(item)){//是一个分组
+            if(isGroupNode(item)){//是一个分组
     
                 if(item._children && item._children.length>0){
                     content = $self.getHtmlByTreeChilds(item._children, treeExportNode.children, cssList, level+1);
@@ -246,7 +243,7 @@ export class PsdDeal {
                 //生成分组css
                 $self.genGroupCss(item, cssList);
     
-            }else if(item.type == "layer" && item.visible && $self.isGroupVisible(item.parent)){//是一个层，被分组包含，分组可见
+            }else if(isVisibleLayerNode(item) && isGroupNode(item.parent)){//是一个层，被分组包含，分组可见
 
                 //生成图层css
                 $self.genLayerCss(item, cssList);
@@ -396,7 +393,7 @@ export class PsdDeal {
     }
 
     transUnit(value:number):string{
-        if(this.config.device == "pc"){
+        if(this.config.device == DesignDeviceEnum.PC){
             if(this.config.selfAdapt){
                 return value/100 + 'rem';
             }else{
@@ -413,7 +410,7 @@ export class PsdDeal {
             if(node.isGroup()){
                 node.originName = node.name;
                 node.name = "group_"+index;
-            }else if(node.type === "layer"){
+            }else if(isLayerNode(node)){
                 node.originName = node.name;
                 node.name = "layer_"+index;
             }
@@ -455,22 +452,17 @@ export class PsdDeal {
         }
         return level;
     }
-    isGroupVisible(node:any):boolean{
-        return node && node.type == "group" && node.visible;
-    }
-
     //图片都保存下来
     async saveImgs(dirPath: string){
-        var $self = this;
         var nodeList = this.tree.descendants();
         console.log("过滤不可见图层");
         var visibleNodeList = nodeList.filter(function(node: any){
             let nodeArea = (node.right-node.left) * (node.bottom - node.top);
 
             if(
-                $self.isGroupVisible(node.parent)//分组可见
-                && (node.type === "layer" && node.visible)//图层可见
-                &&  ( nodeArea > 0)//不是空图层
+                isGroupNode(node.parent)//分组可见
+                && isVisibleLayerNode(node)//图层可见
+                && nodeArea > 0//不是空图层
             ){//节点(图层可见，分组可见，节点不为空图层)
 
                 return true;

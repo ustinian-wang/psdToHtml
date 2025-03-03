@@ -1,7 +1,8 @@
-import { writeFile } from "fs";
-
-const fs = require("fs");
-const path = require("path");
+import * as fs from "node:fs";
+import * as path from "node:path";
+import pkg from "pngjs";
+import pngToJpeg from 'png-to-jpeg';
+const { PNG } = pkg;
 
 export namespace Utils {
     export function clearDir (filePath: string): void {
@@ -72,13 +73,13 @@ export namespace Utils {
     export function copyFile(src: string, dist: string){
         return new Promise(function(resolve, reject){
 
-            fs.copyFile(src, dist, function(err: Error){
-                if(err){
+            fs.copyFile(src, dist, function(err: NodeJS.ErrnoException | null) {
+                if (err) {
                     reject(err);
-                }else{
+                } else {
                     resolve(undefined);
                 }
-            })
+            });
 
         });
     }
@@ -94,7 +95,6 @@ export namespace Utils {
             quality: 80
         });
         */
-        const pngToJpeg = require('png-to-jpeg');
         let buffer:Buffer = await Utils.readFile(pngPath);
         let outputBuffer:Buffer = await pngToJpeg({quality: 80})(buffer);
         await Utils.writeFile(jpgPath, outputBuffer);
@@ -111,7 +111,6 @@ export namespace Utils {
             return false;
         }
 
-        const PNG = require("pngjs").PNG;
         var $png:any = new PNG({
             filterType: 4
         });
@@ -233,22 +232,22 @@ export namespace Utils {
 
     export async function writeFile(filePath: string, content: any) {
         return new Promise(function(resolve, reject){
-            fs.writeFile(filePath, content, function(err: Error){
-                if(err){
-                    reject();
-                }else{
-                    resolve(err);
+            fs.writeFile(filePath, content, function(err: NodeJS.ErrnoException | null) {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(undefined);
                 }
-            })
+            });
         });
     }
 
     export async function readFile(filePath: string): Promise<Buffer>{
         return new Promise(function(resolve, reject){
-            fs.readFile(filePath, function(err: Error, data: Buffer){
-                if(err){
+            fs.readFile(filePath, function(err: NodeJS.ErrnoException | null, data: Buffer) {
+                if (err) {
                     reject(err);
-                }else{
+                } else {
                     resolve(data);
                 }
             });
